@@ -1,0 +1,23 @@
+.PHONY: clean
+
+main: main.cmx crypt.cmxa
+	ocamlopt -o main -g -I . crypt.cmxa main.cmx
+
+shims.o: lib/shims.c
+	ocamlopt -c lib/shims.c
+
+crypt.cmx: lib/crypt.ml
+	ocamlopt -c -o crypt.cmx lib/crypt.ml
+
+dllcrypt_stubs.so: shims.o
+	ocamlmklib -o crypt_stubs -g shims.o
+
+crypt.cmxa: dllcrypt_stubs.so crypt.cmx
+	ocamlopt -a -o crypt.cmxa -g -cclib -lcrypt_stubs -cclib -lcrypt crypt.cmx
+
+main.cmx: bin/main.ml crypt.cmxa
+	ocamlopt -c -o main.cmx bin/main.ml
+
+
+clean:
+	rm -f *.a *.so *.cmx *.cmt *.cmi *.o main *.cmxa
